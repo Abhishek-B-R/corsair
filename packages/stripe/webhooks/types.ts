@@ -309,16 +309,18 @@ export function verifyStripeWebhookSignature(
 	// Stripe sends pretty-printed JSON (2-space indent). If the body was parsed
 	// and re-stringified to compact form, the lengths won't match and the HMAC
 	// will fail. Detect this via content-length and retry with pretty formatting.
+	// content-length is a byte count, so compare UTF-8 byte lengths rather than
+	// string lengths, which differ as soon as the payload has non-ASCII text.
 	// Type assertion: headers['content-length'] is string | string[] | undefined; undefined is guarded by the ternary
 	const contentLength = request.headers['content-length']
 		? parseInt(request.headers['content-length'] as string, 10)
 		: null;
 
 	const candidates: string[] = [rawBody];
-	if (contentLength && rawBody.length !== contentLength) {
+	if (contentLength && Buffer.byteLength(rawBody, 'utf8') !== contentLength) {
 		try {
 			const pretty = JSON.stringify(JSON.parse(rawBody), null, 2);
-			if (pretty.length === contentLength) {
+			if (Buffer.byteLength(pretty, 'utf8') === contentLength) {
 				candidates.push(pretty);
 			}
 		} catch {

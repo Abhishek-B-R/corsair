@@ -179,7 +179,8 @@ describe('verifyStripeWebhookSignature', () => {
 			requestWith(
 				{
 					'stripe-signature': `t=${timestamp},v1=${sig}`,
-					'content-length': String(stripeEventBody.length),
+					// content-length counts bytes, and the fixture holds a non-ASCII 'é'
+					'content-length': String(Buffer.byteLength(stripeEventBody)),
 				},
 				compactBody,
 			),
