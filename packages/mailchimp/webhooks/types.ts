@@ -205,10 +205,14 @@ export function verifyMailchimpWebhookSecret(
 	if (!provided) {
 		return { valid: false, error: `Missing "${paramName}" query parameter` };
 	}
-	if (provided.length !== secret.length) {
+	// Compare UTF-8 byte lengths, not string lengths: a non-ASCII value with the
+	// same string length would otherwise make timingSafeEqual throw.
+	const providedBuffer = Buffer.from(provided);
+	const secretBuffer = Buffer.from(secret);
+	if (providedBuffer.length !== secretBuffer.length) {
 		return { valid: false, error: 'Invalid webhook secret' };
 	}
-	if (!timingSafeEqual(Buffer.from(provided), Buffer.from(secret))) {
+	if (!timingSafeEqual(providedBuffer, secretBuffer)) {
 		return { valid: false, error: 'Invalid webhook secret' };
 	}
 	return { valid: true };

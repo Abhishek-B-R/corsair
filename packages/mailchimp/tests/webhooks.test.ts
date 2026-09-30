@@ -118,6 +118,14 @@ describe('verifyMailchimpWebhookSecret (W-4)', () => {
 		expect(res.error).toMatch(/invalid/i);
 	});
 
+	it('rejects a non-ASCII secret of the same string length without throwing', () => {
+		// 'é' is one UTF-16 code unit but two UTF-8 bytes
+		const req = mockWebhookRequest({ type: 'subscribe' }, { secret: 's3cr3é' });
+		const res = verifyMailchimpWebhookSecret(req, 's3cr3t');
+		expect(res.valid).toBe(false);
+		expect(res.error).toMatch(/invalid/i);
+	});
+
 	it('rejects when the request carries no secret param', () => {
 		const req = mockWebhookRequest({ type: 'subscribe' });
 		const res = verifyMailchimpWebhookSecret(req, 's3cr3t');
