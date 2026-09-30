@@ -133,11 +133,15 @@ export function verifyXquikWebhookSignature(
 
 	const expected = expectedSignature(timestamp, nonce, request.rawBody, secret);
 
-	if (expected.length !== signature.length) {
+	// Compare UTF-8 byte lengths, not string lengths: a non-ASCII header value
+	// with the same string length would otherwise make timingSafeEqual throw.
+	const expectedBuffer = Buffer.from(expected);
+	const signatureBuffer = Buffer.from(signature);
+	if (expectedBuffer.length !== signatureBuffer.length) {
 		return { error: 'Invalid Xquik webhook signature', valid: false };
 	}
 
-	const valid = timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+	const valid = timingSafeEqual(expectedBuffer, signatureBuffer);
 	return valid
 		? { valid }
 		: { error: 'Invalid Xquik webhook signature', valid: false };

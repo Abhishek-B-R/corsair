@@ -134,4 +134,23 @@ describe('Xquik webhook helpers', () => {
 			valid: false,
 		});
 	});
+
+	it('rejects a non-ASCII signature of the same string length without throwing', () => {
+		const rawBody = JSON.stringify({
+			data: { tweetId: '123' },
+			eventType: 'tweet.new',
+			occurredAt: '2026-05-17T12:00:00.000Z',
+			streamEventId: '456',
+		});
+
+		const request = signWebhook(rawBody, 'test-secret');
+		const signature = String(request.headers['x-xquik-signature']);
+		// Swap the last hex digit for 'é': same string length, one more UTF-8 byte
+		request.headers['x-xquik-signature'] = `${signature.slice(0, -1)}é`;
+
+		expect(verifyXquikWebhookSignature(request, 'test-secret')).toEqual({
+			error: 'Invalid Xquik webhook signature',
+			valid: false,
+		});
+	});
 });
